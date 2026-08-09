@@ -10,9 +10,9 @@ import {
   CheckCircle2,
   XCircle,
   Boxes,
-  Activity,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import api from "../../services/api";
 
 type DashboardStats = {
   customers: number;
@@ -65,62 +65,42 @@ export default function Dashboard() {
   const [lowStock, setLowStock] =
     useState<LowStockProduct[]>([]);
 
-  const [loading, setLoading] = useState(true);
-
-  const token = localStorage.getItem("token");
+  const [loading, setLoading] =
+    useState(true);
 
   useEffect(() => {
     const loadDashboard = async () => {
       try {
-        const headers = {
-          Authorization: `Bearer ${token}`,
-        };
+        setLoading(true);
 
-        const [statsRes, challansRes, stockRes] =
-          await Promise.all([
-            fetch(
-              "http://localhost:5000/api/dashboard/stats",
-              { headers }
-            ),
-            fetch(
-              "http://localhost:5000/api/dashboard/recent-challans",
-              { headers }
-            ),
-            fetch(
-              "http://localhost:5000/api/dashboard/low-stock",
-              { headers }
-            ),
-          ]);
+        const [
+          statsResponse,
+          challansResponse,
+          stockResponse,
+        ] = await Promise.all([
+          api.get("/dashboard/stats"),
+          api.get("/dashboard/recent-challans"),
+          api.get("/dashboard/low-stock"),
+        ]);
 
-        const statsData = await statsRes.json();
-        const challansData = await challansRes.json();
-        const stockData = await stockRes.json();
+        setStats(
+          statsResponse.data?.data ||
+            statsResponse.data
+        );
 
-        if (!statsRes.ok) {
-          throw new Error(
-            statsData.message ||
-              "Failed to load dashboard"
-          );
-        }
+        setRecentChallans(
+          challansResponse.data?.data || []
+        );
 
-        if (!challansRes.ok) {
-          throw new Error(
-            challansData.message ||
-              "Failed to load challans"
-          );
-        }
-
-        if (!stockRes.ok) {
-          throw new Error(
-            stockData.message ||
-              "Failed to load inventory"
-          );
-        }
-
-        setStats(statsData.data);
-        setRecentChallans(challansData.data || []);
-        setLowStock(stockData.data || []);
+        setLowStock(
+          stockResponse.data?.data || []
+        );
       } catch (error) {
+        console.error(
+          "Dashboard loading error:",
+          error
+        );
+
         toast.error(
           error instanceof Error
             ? error.message
@@ -132,13 +112,12 @@ export default function Dashboard() {
     };
 
     void loadDashboard();
-  }, [token]);
+  }, []);
 
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="h-32 animate-pulse rounded-3xl bg-white/[0.03]" />
-
+        {/* KPI skeletons */}
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {[1, 2, 3, 4].map((item) => (
             <div
@@ -148,15 +127,17 @@ export default function Dashboard() {
           ))}
         </div>
 
+        {/* Main skeletons */}
         <div className="grid gap-6 xl:grid-cols-3">
           <div className="h-80 animate-pulse rounded-2xl bg-white/[0.03] xl:col-span-2" />
+
           <div className="h-80 animate-pulse rounded-2xl bg-white/[0.03]" />
         </div>
       </div>
     );
   }
 
-  const data = stats ?? {
+  const data: DashboardStats = stats ?? {
     customers: 0,
     products: 0,
     challans: {
@@ -203,14 +184,23 @@ export default function Dashboard() {
     <div className="space-y-6">
       {/* Hero */}
       <motion.section
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{
+          opacity: 0,
+          y: 12,
+        }}
+        animate={{
+          opacity: 1,
+          y: 0,
+        }}
         className="relative overflow-hidden rounded-3xl border border-white/[0.07] bg-gradient-to-br from-[#15110d] via-[#0d0e11] to-[#090a0d] p-8"
       >
-        <div className="relative z-10 max-w-2xl">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-orange-400/20 bg-orange-400/[0.07] px-3 py-1.5 text-xs text-orange-300">
-            <Activity size={13} />
-            System operational
+        <div className="relative z-10">
+          <div className="mb-3 flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-orange-400 shadow-[0_0_15px_rgba(251,146,60,0.8)]" />
+
+            <span className="text-xs font-medium uppercase tracking-[0.18em] text-orange-400/80">
+              System operational
+            </span>
           </div>
 
           <h2 className="text-3xl font-semibold tracking-tight text-white">
@@ -218,8 +208,8 @@ export default function Dashboard() {
           </h2>
 
           <p className="mt-2 max-w-xl text-sm leading-6 text-zinc-500">
-            Monitor customers, inventory, sales challans and
-            follow-ups from one place.
+            Monitor customers, inventory, sales challans
+            and follow-ups from one place.
           </p>
         </div>
 
@@ -312,41 +302,44 @@ export default function Dashboard() {
                 No challans yet.
               </div>
             ) : (
-              recentChallans.slice(0, 6).map((challan) => (
-                <div
-                  key={challan.id}
-                  className="flex items-center justify-between px-6 py-4 transition hover:bg-white/[0.02]"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/[0.035] text-zinc-500">
-                      <ClipboardList size={16} />
+              recentChallans
+                .slice(0, 6)
+                .map((challan) => (
+                  <div
+                    key={challan.id}
+                    className="flex items-center justify-between px-6 py-4 transition hover:bg-white/[0.02]"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/[0.035] text-zinc-500">
+                        <ClipboardList size={16} />
+                      </div>
+
+                      <div>
+                        <p className="text-sm font-medium text-zinc-200">
+                          {challan.challanNumber}
+                        </p>
+
+                        <p className="mt-1 text-xs text-zinc-600">
+                          {challan.customer?.name || "Unknown customer"}
+
+                          {challan.customer?.businessName
+                            ? ` · ${challan.customer.businessName}`
+                            : ""}
+                        </p>
+                      </div>
                     </div>
 
-                    <div>
-                      <p className="text-sm font-medium text-zinc-200">
-                        {challan.challanNumber}
-                      </p>
+                    <div className="text-right">
+                      <StatusBadge
+                        status={challan.status}
+                      />
 
                       <p className="mt-1 text-xs text-zinc-600">
-                        {challan.customer.name}
-                        {challan.customer.businessName
-                          ? ` · ${challan.customer.businessName}`
-                          : ""}
+                        {challan.totalQuantity} units
                       </p>
                     </div>
                   </div>
-
-                  <div className="text-right">
-                    <StatusBadge
-                      status={challan.status}
-                    />
-
-                    <p className="mt-1 text-xs text-zinc-600">
-                      {challan.totalQuantity} units
-                    </p>
-                  </div>
-                </div>
-              ))
+                ))
             )}
           </div>
         </section>
@@ -392,34 +385,36 @@ export default function Dashboard() {
               </div>
             ) : (
               <div className="space-y-2">
-                {lowStock.slice(0, 6).map((product) => (
-                  <div
-                    key={product.id}
-                    className="rounded-xl border border-white/[0.05] bg-white/[0.02] p-3"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-zinc-300">
-                          {product.name}
-                        </p>
+                {lowStock
+                  .slice(0, 6)
+                  .map((product) => (
+                    <div
+                      key={product.id}
+                      className="rounded-xl border border-white/[0.05] bg-white/[0.02] p-3"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-zinc-300">
+                            {product.name}
+                          </p>
 
-                        <p className="mt-1 text-[11px] text-zinc-600">
-                          {product.sku}
-                        </p>
-                      </div>
+                          <p className="mt-1 text-[11px] text-zinc-600">
+                            {product.sku}
+                          </p>
+                        </div>
 
-                      <div className="ml-3 text-right">
-                        <p className="text-sm font-semibold text-orange-400">
-                          {product.currentStock}
-                        </p>
+                        <div className="ml-3 text-right">
+                          <p className="text-sm font-semibold text-orange-400">
+                            {product.currentStock}
+                          </p>
 
-                        <p className="text-[10px] text-zinc-600">
-                          min {product.minimumStock}
-                        </p>
+                          <p className="text-[10px] text-zinc-600">
+                            min {product.minimumStock}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
               </div>
             )}
           </div>
@@ -458,11 +453,16 @@ function StatusBadge({
 }: {
   status: RecentChallan["status"];
 }) {
-  const styles = {
+  const styles: Record<
+    RecentChallan["status"],
+    string
+  > = {
     CONFIRMED:
       "border-emerald-400/10 bg-emerald-400/[0.07] text-emerald-400",
+
     DRAFT:
       "border-amber-400/10 bg-amber-400/[0.07] text-amber-400",
+
     CANCELLED:
       "border-red-400/10 bg-red-400/[0.07] text-red-400",
   };
@@ -489,8 +489,10 @@ function MiniStat({
 }) {
   return (
     <div className="flex items-center gap-4 rounded-2xl border border-white/[0.07] bg-[#0d0e11] p-5">
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.025]">
-        <Icon size={18} className={iconClass} />
+      <div
+        className={`flex h-10 w-10 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.025] ${iconClass}`}
+      >
+        <Icon size={18} />
       </div>
 
       <div>
@@ -499,7 +501,7 @@ function MiniStat({
         </p>
 
         <p className="mt-1 text-xl font-semibold text-white">
-          {value}
+          {value.toLocaleString()}
         </p>
       </div>
     </div>

@@ -9,6 +9,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import api from "../../services/api";
 
 type Product = {
   id: string;
@@ -42,45 +43,20 @@ export default function Inventory() {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  const token = localStorage.getItem("token");
-
   const loadData = async () => {
     try {
       setRefreshing(true);
 
-      const [productsRes, movementsRes] = await Promise.all([
-        fetch("http://localhost:5000/api/products", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }),
+      const [productsResponse, movementsResponse] =
+        await Promise.all([
+          api.get("/products"),
+          api.get("/stock-movements"),
+        ]);
 
-        fetch("http://localhost:5000/api/stock-movements", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }),
-      ]);
-
-      const productsData = await productsRes.json();
-      const movementsData = await movementsRes.json();
-
-      if (!productsRes.ok) {
-        throw new Error(
-          productsData.message || "Failed to load products"
-        );
-      }
-
-      if (!movementsRes.ok) {
-        throw new Error(
-          movementsData.message || "Failed to load movements"
-        );
-      }
-
-      setProducts(productsData.data || []);
-      setMovements(movementsData.data || []);
+      setProducts(productsResponse.data.data || []);
+      setMovements(movementsResponse.data.data || []);
     } catch (error) {
-      console.error(error);
+      console.error("Inventory loading error:", error);
 
       toast.error(
         error instanceof Error
@@ -93,32 +69,44 @@ export default function Inventory() {
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => {
+    const timer = window.setTimeout(() => {
       void loadData();
     }, 0);
 
-    return () => clearTimeout(timer);
+    return () => {
+      window.clearTimeout(timer);
+    };
   }, []);
 
   const handleSubmit = async (
-    event: React.FormEvent<HTMLFormElement>
+    event: React.FormEvent
   ) => {
     event.preventDefault();
 
-    if (!selectedProduct || !quantity || !reason.trim()) {
+    if (
+      !selectedProduct ||
+      !quantity ||
+      !reason.trim()
+    ) {
       toast.error("Fill all fields");
       return;
     }
 
     const numericQuantity = Number(quantity);
 
-    if (numericQuantity <= 0) {
-      toast.error("Quantity must be greater than 0");
+    if (
+      !Number.isFinite(numericQuantity) ||
+      numericQuantity <= 0
+    ) {
+      toast.error(
+        "Quantity must be greater than 0"
+      );
       return;
     }
 
     const selected = products.find(
-      (product) => product.id === selectedProduct
+      (product) =>
+        product.id === selectedProduct
     );
 
     if (!selected) {
@@ -137,32 +125,18 @@ export default function Inventory() {
     try {
       setLoading(true);
 
-      const response = await fetch(
-        `http://localhost:5000/api/products/${selectedProduct}/movements`,
+      const response = await api.post(
+        `/products/${selectedProduct}/movements`,
         {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            quantity: numericQuantity,
-            type,
-            reason: reason.trim(),
-          }),
+          quantity: numericQuantity,
+          type,
+          reason: reason.trim(),
         }
       );
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          result.message || "Stock update failed"
-        );
-      }
-
       toast.success(
-        result.message || "Stock updated successfully"
+        response.data.message ||
+          "Stock updated successfully"
       );
 
       setQuantity("");
@@ -171,7 +145,10 @@ export default function Inventory() {
 
       await loadData();
     } catch (error) {
-      console.error(error);
+      console.error(
+        "Stock movement error:",
+        error
+      );
 
       toast.error(
         error instanceof Error
@@ -185,69 +162,78 @@ export default function Inventory() {
 
   const lowStockProducts = products.filter(
     (product) =>
-      product.currentStock <= product.minimumStock
+      Number(product.currentStock) <=
+      Number(product.minimumStock)
   );
 
   const totalUnits = products.reduce(
-    (total, product) => total + product.currentStock,
+    (total, product) =>
+      total + Number(product.currentStock || 0),
     0
   );
 
   const totalStockIn = movements
-    .filter((movement) => movement.type === "IN")
+    .filter(
+      (movement) => movement.type === "IN"
+    )
     .reduce(
-      (total, movement) => total + movement.quantity,
+      (total, movement) =>
+        total + Number(movement.quantity || 0),
       0
     );
 
   const totalStockOut = movements
-    .filter((movement) => movement.type === "OUT")
+    .filter(
+      (movement) => movement.type === "OUT"
+    )
     .reduce(
-      (total, movement) => total + movement.quantity,
+      (total, movement) =>
+        total + Number(movement.quantity || 0),
       0
     );
 
   return (
-    <div className="min-h-screen bg-[#080808] text-white">
-      {/* Page header */}
-      <header className="border-b border-white/[0.06] bg-[#0b0b0b]">
-        <div className="flex flex-col gap-5 px-6 py-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-amber-400/10 bg-amber-400/[0.07] text-amber-400">
-              <Package size={23} />
-            </div>
+    <div className="min-h-full">
+      {/* Page Header */}
 
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight">
-                Inventory
-              </h1>
+      <header className="flex flex-col justify-between gap-5 border-b border-white/[0.06] px-6 py-6 sm:flex-row sm:items-center lg:px-8">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-300/70">
+            Inventory Control
+          </p>
 
-              <p className="mt-1 text-sm text-neutral-500">
-                Monitor stock levels and manage inventory movements
-              </p>
-            </div>
-          </div>
+          <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white">
+            Inventory
+          </h1>
 
-          <button
-            type="button"
-            onClick={() => void loadData()}
-            disabled={refreshing}
-            className="flex w-fit items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-sm font-medium text-neutral-300 transition hover:border-white/[0.14] hover:bg-white/[0.06] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <RefreshCw
-              size={16}
-              className={
-                refreshing ? "animate-spin" : ""
-              }
-            />
-
-            Refresh
-          </button>
+          <p className="mt-1 text-sm text-neutral-500">
+            Monitor stock levels and manage
+            inventory movements
+          </p>
         </div>
+
+        <button
+          type="button"
+          onClick={() => void loadData()}
+          disabled={refreshing}
+          className="flex w-fit items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-sm font-medium text-neutral-300 transition hover:border-amber-400/20 hover:bg-amber-400/[0.04] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <RefreshCw
+            size={16}
+            className={
+              refreshing
+                ? "animate-spin"
+                : ""
+            }
+          />
+
+          Refresh
+        </button>
       </header>
 
       <main className="space-y-8 p-6 lg:p-8">
         {/* Stats */}
+
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
             label="Total Products"
@@ -276,7 +262,8 @@ export default function Inventory() {
           />
         </section>
 
-        {/* Low stock alert */}
+        {/* Low Stock Alert */}
+
         {lowStockProducts.length > 0 && (
           <section className="rounded-2xl border border-amber-400/15 bg-amber-400/[0.04] p-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -286,31 +273,35 @@ export default function Inventory() {
                 </p>
 
                 <p className="mt-1 text-sm text-neutral-500">
-                  {lowStockProducts.length} product
+                  {lowStockProducts.length}{" "}
+                  product
                   {lowStockProducts.length !== 1
                     ? "s are"
                     : " is"}{" "}
-                  at or below the minimum stock level.
+                  at or below the minimum stock
+                  level.
                 </p>
               </div>
 
               <div className="rounded-full border border-amber-400/10 bg-amber-400/[0.06] px-3 py-1 text-xs font-medium text-amber-300">
-                {lowStockProducts.length} Low Stock
+                {lowStockProducts.length} Low
+                Stock
               </div>
             </div>
           </section>
         )}
 
-        {/* Stock movement */}
+        {/* Stock Movement */}
+
         <section className="overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0d0d0d]">
           <div className="border-b border-white/[0.06] px-6 py-5">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/[0.04] text-neutral-400">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-400/[0.06] text-amber-400">
                 <Plus size={17} />
               </div>
 
               <div>
-                <h2 className="font-semibold">
+                <h2 className="font-semibold text-white">
                   Stock Movement
                 </h2>
 
@@ -329,7 +320,9 @@ export default function Inventory() {
               <select
                 value={selectedProduct}
                 onChange={(event) =>
-                  setSelectedProduct(event.target.value)
+                  setSelectedProduct(
+                    event.target.value
+                  )
                 }
                 className="w-full rounded-xl border border-white/[0.08] bg-[#080808] px-4 py-3 text-sm text-white outline-none transition focus:border-amber-400/50"
                 required
@@ -355,7 +348,9 @@ export default function Inventory() {
                 value={type}
                 onChange={(event) =>
                   setType(
-                    event.target.value as "IN" | "OUT"
+                    event.target.value as
+                      | "IN"
+                      | "OUT"
                   )
                 }
                 className="w-full rounded-xl border border-white/[0.08] bg-[#080808] px-4 py-3 text-sm text-white outline-none transition focus:border-amber-400/50"
@@ -374,10 +369,13 @@ export default function Inventory() {
               <input
                 type="number"
                 min="1"
+                step="1"
                 placeholder="Enter quantity"
                 value={quantity}
                 onChange={(event) =>
-                  setQuantity(event.target.value)
+                  setQuantity(
+                    event.target.value
+                  )
                 }
                 className="w-full rounded-xl border border-white/[0.08] bg-[#080808] px-4 py-3 text-sm text-white placeholder:text-neutral-700 outline-none transition focus:border-amber-400/50"
                 required
@@ -390,7 +388,9 @@ export default function Inventory() {
                 placeholder="e.g. New purchase"
                 value={reason}
                 onChange={(event) =>
-                  setReason(event.target.value)
+                  setReason(
+                    event.target.value
+                  )
                 }
                 className="w-full rounded-xl border border-white/[0.08] bg-[#080808] px-4 py-3 text-sm text-white placeholder:text-neutral-700 outline-none transition focus:border-amber-400/50"
                 required
@@ -417,11 +417,12 @@ export default function Inventory() {
           </form>
         </section>
 
-        {/* Current stock */}
+        {/* Current Stock */}
+
         <section>
           <div className="mb-4 flex items-end justify-between">
             <div>
-              <h2 className="text-lg font-semibold">
+              <h2 className="text-lg font-semibold text-white">
                 Current Stock
               </h2>
 
@@ -438,28 +439,38 @@ export default function Inventory() {
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {products.map((product) => {
+                const currentStock =
+                  Number(
+                    product.currentStock
+                  ) || 0;
+
+                const minimumStock =
+                  Number(
+                    product.minimumStock
+                  ) || 0;
+
                 const low =
-                  product.currentStock <=
-                  product.minimumStock;
+                  currentStock <=
+                  minimumStock;
 
                 const stockPercentage =
-                  product.minimumStock > 0
+                  minimumStock > 0
                     ? Math.min(
                         100,
                         Math.round(
-                          (product.currentStock /
-                            product.minimumStock) *
+                          (currentStock /
+                            minimumStock) *
                             100
                         )
                       )
-                    : product.currentStock > 0
+                    : currentStock > 0
                     ? 100
                     : 0;
 
                 return (
                   <div
                     key={product.id}
-                    className="group rounded-2xl border border-white/[0.06] bg-[#0d0d0d] p-5 transition duration-300 hover:-translate-y-1 hover:border-white/[0.12] hover:bg-[#111111]"
+                    className="group rounded-2xl border border-white/[0.06] bg-[#0d0d0d] p-5 transition duration-300 hover:-translate-y-1 hover:border-amber-400/15 hover:bg-[#111111]"
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0">
@@ -488,11 +499,12 @@ export default function Inventory() {
                     <div className="mt-7 flex items-end justify-between">
                       <div>
                         <p className="text-4xl font-semibold tracking-tight text-white">
-                          {product.currentStock}
+                          {currentStock}
                         </p>
 
                         <p className="mt-1 text-xs text-neutral-600">
-                          Minimum {product.minimumStock}
+                          Minimum{" "}
+                          {minimumStock}
                         </p>
                       </div>
 
@@ -504,9 +516,13 @@ export default function Inventory() {
                         }
                       >
                         {low ? (
-                          <TrendingDown size={18} />
+                          <TrendingDown
+                            size={18}
+                          />
                         ) : (
-                          <TrendingUp size={18} />
+                          <TrendingUp
+                            size={18}
+                          />
                         )}
                       </div>
                     </div>
@@ -530,10 +546,11 @@ export default function Inventory() {
           )}
         </section>
 
-        {/* Movement history */}
+        {/* Movement History */}
+
         <section className="overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0d0d0d]">
           <div className="border-b border-white/[0.06] px-6 py-5">
-            <h2 className="font-semibold">
+            <h2 className="font-semibold text-white">
               Stock Movement History
             </h2>
 
@@ -579,54 +596,68 @@ export default function Inventory() {
                     </td>
                   </tr>
                 ) : (
-                  movements.map((movement) => (
-                    <tr
-                      key={movement.id}
-                      className="transition hover:bg-white/[0.02]"
-                    >
-                      <td className="px-6 py-4">
-                        <div className="font-medium text-neutral-200">
-                          {movement.product.name}
-                        </div>
+                  movements.map(
+                    (movement) => (
+                      <tr
+                        key={movement.id}
+                        className="transition hover:bg-white/[0.02]"
+                      >
+                        <td className="px-6 py-4">
+                          <div className="font-medium text-neutral-200">
+                            {
+                              movement.product
+                                .name
+                            }
+                          </div>
 
-                        <div className="mt-1 text-xs text-neutral-600">
-                          {movement.product.sku}
-                        </div>
-                      </td>
+                          <div className="mt-1 text-xs text-neutral-600">
+                            {
+                              movement.product
+                                .sku
+                            }
+                          </div>
+                        </td>
 
-                      <td className="px-6 py-4">
-                        <span
-                          className={
-                            movement.type === "IN"
-                              ? "inline-flex items-center gap-2 rounded-full border border-emerald-400/10 bg-emerald-400/[0.06] px-3 py-1.5 text-xs font-medium text-emerald-400"
-                              : "inline-flex items-center gap-2 rounded-full border border-red-400/10 bg-red-400/[0.06] px-3 py-1.5 text-xs font-medium text-red-400"
-                          }
-                        >
-                          {movement.type === "IN" ? (
-                            <ArrowUp size={13} />
-                          ) : (
-                            <ArrowDown size={13} />
-                          )}
+                        <td className="px-6 py-4">
+                          <span
+                            className={
+                              movement.type ===
+                              "IN"
+                                ? "inline-flex items-center gap-2 rounded-full border border-emerald-400/10 bg-emerald-400/[0.06] px-3 py-1.5 text-xs font-medium text-emerald-400"
+                                : "inline-flex items-center gap-2 rounded-full border border-red-400/10 bg-red-400/[0.06] px-3 py-1.5 text-xs font-medium text-red-400"
+                            }
+                          >
+                            {movement.type ===
+                            "IN" ? (
+                              <ArrowUp
+                                size={13}
+                              />
+                            ) : (
+                              <ArrowDown
+                                size={13}
+                              />
+                            )}
 
-                          {movement.type}
-                        </span>
-                      </td>
+                            {movement.type}
+                          </span>
+                        </td>
 
-                      <td className="px-6 py-4 font-semibold text-white">
-                        {movement.quantity}
-                      </td>
+                        <td className="px-6 py-4 font-semibold text-white">
+                          {movement.quantity}
+                        </td>
 
-                      <td className="px-6 py-4 text-sm text-neutral-500">
-                        {movement.reason}
-                      </td>
+                        <td className="px-6 py-4 text-sm text-neutral-500">
+                          {movement.reason}
+                        </td>
 
-                      <td className="px-6 py-4 text-sm text-neutral-600">
-                        {new Date(
-                          movement.createdAt
-                        ).toLocaleString()}
-                      </td>
-                    </tr>
-                  ))
+                        <td className="px-6 py-4 text-sm text-neutral-600">
+                          {new Date(
+                            movement.createdAt
+                          ).toLocaleString()}
+                        </td>
+                      </tr>
+                    )
+                  )
                 )}
               </tbody>
             </table>
@@ -657,10 +688,10 @@ function StatCard({
   negative,
 }: StatCardProps) {
   return (
-    <div className="group rounded-2xl border border-white/[0.06] bg-[#0d0d0d] p-5 transition duration-300 hover:-translate-y-0.5 hover:border-white/[0.12]">
+    <div className="rounded-2xl border border-white/[0.06] bg-[#0d0d0d] p-5 transition hover:-translate-y-0.5 hover:border-amber-400/10">
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-xs font-medium uppercase tracking-wider text-neutral-600">
+          <p className="text-xs font-medium uppercase tracking-[0.12em] text-neutral-600">
             {label}
           </p>
 
@@ -690,10 +721,13 @@ type FieldProps = {
   children: React.ReactNode;
 };
 
-function Field({ label, children }: FieldProps) {
+function Field({
+  label,
+  children,
+}: FieldProps) {
   return (
     <div>
-      <label className="mb-2 block text-xs font-medium text-neutral-500">
+      <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.15em] text-neutral-600">
         {label}
       </label>
 

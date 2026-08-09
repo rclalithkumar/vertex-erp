@@ -14,6 +14,7 @@ import {
   MapPin,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import api from "../../services/api";
 
 type Customer = {
   id: string;
@@ -67,43 +68,50 @@ export default function Customers() {
   const [form, setForm] = useState<CustomerForm>(emptyForm);
   const [saving, setSaving] = useState(false);
 
-  const getToken = () => localStorage.getItem("token");
-
   const fetchCustomers = async () => {
     try {
       setLoading(true);
 
-      const token = getToken();
-
-      const url = `http://localhost:5000/api/customers${
-        search
-          ? `?search=${encodeURIComponent(search)}`
-          : ""
-      }`;
-
-      const response = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const response = await api.get("/customers", {
+        params: search
+          ? {
+              search,
+            }
+          : undefined,
       });
 
-      const result = await response.json();
+      const result = response.data;
 
-      if (!response.ok) {
-        throw new Error(
-          result.message || "Failed to fetch customers"
-        );
-      }
+      /*
+       * Supports both:
+       *
+       * { success: true, data: [...] }
+       *
+       * and:
+       *
+       * { data: { customers: [...] } }
+       */
 
-      setCustomers(result.data || []);
+      const customerData =
+        result?.data?.customers ??
+        result?.data ??
+        result?.customers ??
+        [];
+
+      setCustomers(
+        Array.isArray(customerData)
+          ? customerData
+          : []
+      );
     } catch (error) {
-      console.error(error);
+      console.error("Fetch customers error:", error);
 
-      toast.error(
+      const message =
         error instanceof Error
           ? error.message
-          : "Failed to load customers"
-      );
+          : "Failed to load customers";
+
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -115,14 +123,11 @@ export default function Customers() {
     }, 300);
 
     return () => clearTimeout(timer);
-
-    // fetchCustomers intentionally uses search.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
   const openCreateModal = () => {
     setEditingId(null);
-    setForm(emptyForm);
+    setForm({ ...emptyForm });
     setShowModal(true);
   };
 
@@ -152,7 +157,7 @@ export default function Customers() {
 
     setShowModal(false);
     setEditingId(null);
-    setForm(emptyForm);
+    setForm({ ...emptyForm });
   };
 
   const handleChange = (
@@ -166,7 +171,7 @@ export default function Customers() {
   };
 
   const handleSubmit = async (
-    event: React.FormEvent<HTMLFormElement>
+    event: React.FormEvent
   ) => {
     event.preventDefault();
 
@@ -184,52 +189,49 @@ export default function Customers() {
     try {
       setSaving(true);
 
-      const token = getToken();
+      const payload = {
+        ...form,
+        followUpDate: form.followUpDate || null,
+        email: form.email || null,
+        gstNumber: form.gstNumber || null,
+        notes: form.notes || null,
+      };
 
-      const url = editingId
-        ? `http://localhost:5000/api/customers/${editingId}`
-        : "http://localhost:5000/api/customers";
+      if (editingId) {
+        await api.put(
+          `/customers/${editingId}`,
+          payload
+        );
 
-      const response = await fetch(url, {
-        method: editingId ? "PUT" : "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          ...form,
-          followUpDate: form.followUpDate || null,
-          email: form.email || null,
-          gstNumber: form.gstNumber || null,
-          notes: form.notes || null,
-        }),
-      });
+        toast.success(
+          "Customer updated successfully"
+        );
+      } else {
+        await api.post(
+          "/customers",
+          payload
+        );
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          result.message || "Operation failed"
+        toast.success(
+          "Customer created successfully"
         );
       }
-
-      toast.success(
-        editingId
-          ? "Customer updated successfully"
-          : "Customer created successfully"
-      );
 
       closeModal();
 
       await fetchCustomers();
     } catch (error) {
-      console.error(error);
+      console.error(
+        "Customer save error:",
+        error
+      );
 
-      toast.error(
+      const message =
         error instanceof Error
           ? error.message
-          : "Something went wrong"
-      );
+          : "Something went wrong";
+
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -243,47 +245,44 @@ export default function Customers() {
     if (!confirmed) return;
 
     try {
-      const token = getToken();
-
-      const response = await fetch(
-        `http://localhost:5000/api/customers/${id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      await api.delete(
+        `/customers/${id}`
       );
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          result.message || "Failed to delete customer"
-        );
-      }
 
       toast.success("Customer deleted");
 
       await fetchCustomers();
     } catch (error) {
-      console.error(error);
+      console.error(
+        "Delete customer error:",
+        error
+      );
 
-      toast.error(
+      const message =
         error instanceof Error
           ? error.message
-          : "Failed to delete customer"
-      );
+          : "Failed to delete customer";
+
+      toast.error(message);
     }
   };
 
   return (
-    <div className="min-h-full">
+    <div>
       {/* Header */}
+
       <motion.header
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35 }}
+        initial={{
+          opacity: 0,
+          y: -10,
+        }}
+        animate={{
+          opacity: 1,
+          y: 0,
+        }}
+        transition={{
+          duration: 0.35,
+        }}
         className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"
       >
         <div>
@@ -302,6 +301,7 @@ export default function Customers() {
         </div>
 
         <motion.button
+          type="button"
           whileHover={{ y: -2 }}
           whileTap={{ scale: 0.98 }}
           onClick={openCreateModal}
@@ -317,9 +317,16 @@ export default function Customers() {
       </motion.header>
 
       {/* Search + count */}
+
       <motion.section
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{
+          opacity: 0,
+          y: 12,
+        }}
+        animate={{
+          opacity: 1,
+          y: 0,
+        }}
         transition={{
           delay: 0.08,
           duration: 0.35,
@@ -351,9 +358,16 @@ export default function Customers() {
       </motion.section>
 
       {/* Customer table */}
+
       <motion.section
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{
+          opacity: 0,
+          y: 16,
+        }}
+        animate={{
+          opacity: 1,
+          y: 0,
+        }}
         transition={{
           delay: 0.14,
           duration: 0.4,
@@ -430,6 +444,7 @@ export default function Customers() {
                       </p>
 
                       <button
+                        type="button"
                         onClick={openCreateModal}
                         className="mt-5 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-zinc-300 transition hover:bg-white/[0.08] hover:text-white"
                       >
@@ -439,129 +454,149 @@ export default function Customers() {
                   </td>
                 </tr>
               ) : (
-                customers.map((customer, index) => (
-                  <motion.tr
-                    key={customer.id}
-                    initial={{
-                      opacity: 0,
-                      y: 8,
-                    }}
-                    animate={{
-                      opacity: 1,
-                      y: 0,
-                    }}
-                    transition={{
-                      delay: index * 0.025,
-                    }}
-                    className="group transition-colors hover:bg-white/[0.025]"
-                  >
-                    {/* Customer */}
-                    <td className="px-6 py-5">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-gradient-to-br from-yellow-500/15 to-amber-500/10 text-sm font-semibold text-yellow-200">
-                          {customer.name
-                            .charAt(0)
-                            .toUpperCase()}
+                customers.map(
+                  (customer, index) => (
+                    <motion.tr
+                      key={customer.id}
+                      initial={{
+                        opacity: 0,
+                        y: 8,
+                      }}
+                      animate={{
+                        opacity: 1,
+                        y: 0,
+                      }}
+                      transition={{
+                        delay:
+                          index * 0.025,
+                      }}
+                      className="group transition-colors hover:bg-white/[0.025]"
+                    >
+                      {/* Customer */}
+
+                      <td className="px-6 py-5">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-gradient-to-br from-yellow-500/15 to-amber-500/10 text-sm font-semibold text-yellow-200">
+                            {customer.name
+                              .charAt(0)
+                              .toUpperCase()}
+                          </div>
+
+                          <div>
+                            <Link
+                              to={`/customers/${customer.id}`}
+                              className="font-medium text-zinc-200 transition hover:text-yellow-300"
+                            >
+                              {customer.name}
+                            </Link>
+
+                            <p className="mt-0.5 text-xs text-zinc-600">
+                              {customer.email ||
+                                "No email provided"}
+                            </p>
+                          </div>
                         </div>
+                      </td>
 
-                        <div>
-                          <Link
-                            to={`/customers/${customer.id}`}
-                            className="font-medium text-zinc-200 transition hover:text-yellow-300"
-                          >
-                            {customer.name}
-                          </Link>
+                      {/* Business */}
 
-                          <p className="mt-0.5 text-xs text-zinc-600">
-                            {customer.email ||
-                              "No email provided"}
-                          </p>
+                      <td className="px-6 py-5">
+                        <div className="flex items-center gap-2 text-sm text-zinc-300">
+                          <Building2
+                            size={15}
+                            className="text-zinc-600"
+                          />
+
+                          {customer.businessName}
                         </div>
-                      </div>
-                    </td>
+                      </td>
 
-                    {/* Business */}
-                    <td className="px-6 py-5">
-                      <div className="flex items-center gap-2 text-sm text-zinc-300">
-                        <Building2
-                          size={15}
-                          className="text-zinc-600"
-                        />
+                      {/* Contact */}
 
-                        {customer.businessName}
-                      </div>
-                    </td>
+                      <td className="px-6 py-5">
+                        <div className="flex items-center gap-2 text-sm text-zinc-400">
+                          <Phone
+                            size={14}
+                            className="text-zinc-600"
+                          />
 
-                    {/* Contact */}
-                    <td className="px-6 py-5">
-                      <div className="flex items-center gap-2 text-sm text-zinc-400">
-                        <Phone
-                          size={14}
-                          className="text-zinc-600"
-                        />
+                          {customer.mobile}
+                        </div>
+                      </td>
 
-                        {customer.mobile}
-                      </div>
-                    </td>
+                      {/* Type */}
 
-                    {/* Type */}
-                    <td className="px-6 py-5">
-                      <span className="rounded-lg border border-white/[0.07] bg-white/[0.035] px-2.5 py-1.5 text-xs font-medium text-zinc-400">
-                        {customer.customerType}
-                      </span>
-                    </td>
+                      <td className="px-6 py-5">
+                        <span className="rounded-lg border border-white/[0.07] bg-white/[0.035] px-2.5 py-1.5 text-xs font-medium text-zinc-400">
+                          {customer.customerType}
+                        </span>
+                      </td>
 
-                    {/* Status */}
-                    <td className="px-6 py-5">
-                      <span
-                        className={`inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium ${
-                          customer.status === "INACTIVE"
-                            ? "bg-red-400/10 text-red-300"
-                            : customer.status === "LEAD"
-                            ? "bg-yellow-400/10 text-yellow-300"
-                            : "bg-emerald-400/10 text-emerald-300"
-                        }`}
-                      >
+                      {/* Status */}
+
+                      <td className="px-6 py-5">
                         <span
-                          className={`h-1.5 w-1.5 rounded-full ${
-                            customer.status === "INACTIVE"
-                              ? "bg-red-400"
-                              : customer.status === "LEAD"
-                              ? "bg-yellow-400"
-                              : "bg-emerald-400"
+                          className={`inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium ${
+                            customer.status ===
+                            "INACTIVE"
+                              ? "bg-red-400/10 text-red-300"
+                              : customer.status ===
+                                "LEAD"
+                              ? "bg-yellow-400/10 text-yellow-300"
+                              : "bg-emerald-400/10 text-emerald-300"
                           }`}
-                        />
-
-                        {customer.status || "ACTIVE"}
-                      </span>
-                    </td>
-
-                    {/* Actions */}
-                    <td className="px-6 py-5">
-                      <div className="flex justify-end gap-1 opacity-70 transition group-hover:opacity-100">
-                        <button
-                          onClick={() =>
-                            openEditModal(customer)
-                          }
-                          className="rounded-lg p-2 text-zinc-500 transition hover:bg-white/[0.07] hover:text-white"
-                          title="Edit customer"
                         >
-                          <Edit size={16} />
-                        </button>
+                          <span
+                            className={`h-1.5 w-1.5 rounded-full ${
+                              customer.status ===
+                              "INACTIVE"
+                                ? "bg-red-400"
+                                : customer.status ===
+                                  "LEAD"
+                                ? "bg-yellow-400"
+                                : "bg-emerald-400"
+                            }`}
+                          />
 
-                        <button
-                          onClick={() =>
-                            handleDelete(customer.id)
-                          }
-                          className="rounded-lg p-2 text-zinc-600 transition hover:bg-red-500/10 hover:text-red-400"
-                          title="Delete customer"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </td>
-                  </motion.tr>
-                ))
+                          {customer.status ||
+                            "ACTIVE"}
+                        </span>
+                      </td>
+
+                      {/* Actions */}
+
+                      <td className="px-6 py-5">
+                        <div className="flex justify-end gap-1 opacity-70 transition group-hover:opacity-100">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              openEditModal(
+                                customer
+                              )
+                            }
+                            className="rounded-lg p-2 text-zinc-500 transition hover:bg-white/[0.07] hover:text-white"
+                            title="Edit customer"
+                          >
+                            <Edit size={16} />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleDelete(
+                                customer.id
+                              )
+                            }
+                            className="rounded-lg p-2 text-zinc-600 transition hover:bg-red-500/10 hover:text-red-400"
+                            title="Delete customer"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </motion.tr>
+                  )
+                )
               )}
             </tbody>
           </table>
@@ -569,16 +604,24 @@ export default function Customers() {
       </motion.section>
 
       {/* Modal */}
+
       <AnimatePresence>
         {showModal && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{
+              opacity: 0,
+            }}
+            animate={{
+              opacity: 1,
+            }}
+            exit={{
+              opacity: 0,
+            }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md"
             onMouseDown={(event) => {
               if (
-                event.target === event.currentTarget
+                event.target ===
+                event.currentTarget
               ) {
                 closeModal();
               }
@@ -608,6 +651,7 @@ export default function Customers() {
               className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-white/[0.09] bg-[#101010] shadow-2xl shadow-black/60"
             >
               {/* Modal header */}
+
               <div className="flex items-center justify-between border-b border-white/[0.07] px-6 py-5">
                 <div>
                   <div className="flex items-center gap-3">
@@ -634,6 +678,7 @@ export default function Customers() {
                 </div>
 
                 <button
+                  type="button"
                   onClick={closeModal}
                   className="rounded-xl p-2 text-zinc-500 transition hover:bg-white/[0.06] hover:text-white"
                 >
@@ -642,6 +687,7 @@ export default function Customers() {
               </div>
 
               {/* Form */}
+
               <form
                 onSubmit={handleSubmit}
                 className="space-y-6 p-6"
@@ -651,7 +697,10 @@ export default function Customers() {
                     label="Customer Name *"
                     value={form.name}
                     onChange={(value) =>
-                      handleChange("name", value)
+                      handleChange(
+                        "name",
+                        value
+                      )
                     }
                   />
 
@@ -659,7 +708,10 @@ export default function Customers() {
                     label="Mobile *"
                     value={form.mobile}
                     onChange={(value) =>
-                      handleChange("mobile", value)
+                      handleChange(
+                        "mobile",
+                        value
+                      )
                     }
                   />
 
@@ -668,13 +720,18 @@ export default function Customers() {
                     type="email"
                     value={form.email}
                     onChange={(value) =>
-                      handleChange("email", value)
+                      handleChange(
+                        "email",
+                        value
+                      )
                     }
                   />
 
                   <Input
                     label="Business Name *"
-                    value={form.businessName}
+                    value={
+                      form.businessName
+                    }
                     onChange={(value) =>
                       handleChange(
                         "businessName",
@@ -685,7 +742,9 @@ export default function Customers() {
 
                   <Input
                     label="GST Number"
-                    value={form.gstNumber}
+                    value={
+                      form.gstNumber
+                    }
                     onChange={(value) =>
                       handleChange(
                         "gstNumber",
@@ -696,7 +755,9 @@ export default function Customers() {
 
                   <SelectField
                     label="Customer Type *"
-                    value={form.customerType}
+                    value={
+                      form.customerType
+                    }
                     onChange={(value) =>
                       handleChange(
                         "customerType",
@@ -723,7 +784,10 @@ export default function Customers() {
                     label="Status"
                     value={form.status}
                     onChange={(value) =>
-                      handleChange("status", value)
+                      handleChange(
+                        "status",
+                        value
+                      )
                     }
                     options={[
                       {
@@ -744,7 +808,9 @@ export default function Customers() {
                   <Input
                     label="Follow-up Date"
                     type="date"
-                    value={form.followUpDate}
+                    value={
+                      form.followUpDate
+                    }
                     onChange={(value) =>
                       handleChange(
                         "followUpDate",
@@ -758,7 +824,10 @@ export default function Customers() {
                   label="Address *"
                   value={form.address}
                   onChange={(value) =>
-                    handleChange("address", value)
+                    handleChange(
+                      "address",
+                      value
+                    )
                   }
                   rows={3}
                 />
@@ -767,12 +836,16 @@ export default function Customers() {
                   label="Notes"
                   value={form.notes}
                   onChange={(value) =>
-                    handleChange("notes", value)
+                    handleChange(
+                      "notes",
+                      value
+                    )
                   }
                   rows={3}
                 />
 
                 {/* Actions */}
+
                 <div className="flex justify-end gap-3 border-t border-white/[0.07] pt-5">
                   <button
                     type="button"
@@ -783,8 +856,12 @@ export default function Customers() {
                   </button>
 
                   <motion.button
-                    whileHover={{ y: -1 }}
-                    whileTap={{ scale: 0.98 }}
+                    whileHover={{
+                      y: -1,
+                    }}
+                    whileTap={{
+                      scale: 0.98,
+                    }}
                     type="submit"
                     disabled={saving}
                     className="rounded-xl bg-white px-6 py-3 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
@@ -836,10 +913,14 @@ function Input({
           type={type}
           value={value}
           onChange={(event) =>
-            onChange(event.target.value)
+            onChange(
+              event.target.value
+            )
           }
           className={`w-full rounded-xl border border-white/[0.08] bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-zinc-700 focus:border-yellow-400/40 focus:bg-black/50 ${
-            type === "email" ? "pl-10" : ""
+            type === "email"
+              ? "pl-10"
+              : ""
           }`}
           required={label.includes("*")}
         />
@@ -873,19 +954,23 @@ function SelectField({
       <select
         value={value}
         onChange={(event) =>
-          onChange(event.target.value)
+          onChange(
+            event.target.value
+          )
         }
         className="w-full rounded-xl border border-white/[0.08] bg-black/30 px-4 py-3 text-sm text-white outline-none transition focus:border-yellow-400/40 focus:bg-black/50"
       >
-        {options.map((option) => (
-          <option
-            key={option.value}
-            value={option.value}
-            className="bg-[#111111]"
-          >
-            {option.label}
-          </option>
-        ))}
+        {options.map(
+          (option) => (
+            <option
+              key={option.value}
+              value={option.value}
+              className="bg-[#111111]"
+            >
+              {option.label}
+            </option>
+          )
+        )}
       </select>
     </div>
   );
@@ -914,13 +999,17 @@ function TextareaField({
         <textarea
           value={value}
           onChange={(event) =>
-            onChange(event.target.value)
+            onChange(
+              event.target.value
+            )
           }
           rows={rows}
           className="w-full resize-none rounded-xl border border-white/[0.08] bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-zinc-700 focus:border-yellow-400/40 focus:bg-black/50"
         />
 
-        {label.includes("Address") && (
+        {label.includes(
+          "Address"
+        ) && (
           <MapPin
             size={15}
             className="pointer-events-none absolute right-3 top-3 text-zinc-700"

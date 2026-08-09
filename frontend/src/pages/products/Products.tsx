@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
+import api from "../../services/api";
 
 type Product = {
   id: string;
@@ -55,38 +56,17 @@ export default function Products() {
   const [form, setForm] = useState<ProductForm>(emptyForm);
   const [saving, setSaving] = useState(false);
 
-  const getToken = () => localStorage.getItem("token");
-
   const fetchProducts = async () => {
     try {
       setLoading(true);
 
-      const token = getToken();
+      const response = await api.get("/products", {
+        params: search ? { search } : undefined,
+      });
 
-      const response = await fetch(
-        `http://localhost:5000/api/products${
-          search
-            ? `?search=${encodeURIComponent(search)}`
-            : ""
-        }`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          result.message || "Failed to fetch products"
-        );
-      }
-
-      setProducts(result.data || []);
+      setProducts(response.data?.data || []);
     } catch (error) {
-      console.error(error);
+      console.error("Fetch products error:", error);
 
       toast.error(
         error instanceof Error
@@ -99,13 +79,14 @@ export default function Products() {
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => {
+    const timer = window.setTimeout(() => {
       void fetchProducts();
     }, 300);
 
-    return () => clearTimeout(timer);
+    return () => {
+      window.clearTimeout(timer);
+    };
 
-    // fetchProducts intentionally depends on search.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
@@ -183,51 +164,35 @@ export default function Products() {
     try {
       setSaving(true);
 
-      const token = getToken();
+      const payload = {
+        name: form.name.trim(),
+        sku: form.sku.trim(),
+        category: form.category.trim(),
+        unitPrice,
+        minimumStock,
+        warehouse: form.warehouse.trim(),
+      };
 
-      const url = editingId
-        ? `http://localhost:5000/api/products/${editingId}`
-        : "http://localhost:5000/api/products";
-
-      const response = await fetch(url, {
-        method: editingId ? "PUT" : "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          name: form.name.trim(),
-          sku: form.sku.trim(),
-          category: form.category.trim(),
-          unitPrice,
-          minimumStock,
-          warehouse: form.warehouse.trim(),
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          result.message || "Operation failed"
+      if (editingId) {
+        await api.put(
+          `/products/${editingId}`,
+          payload
         );
+
+        toast.success("Product updated successfully");
+      } else {
+        await api.post("/products", payload);
+
+        toast.success("Product created successfully");
       }
 
-      toast.success(
-        editingId
-          ? "Product updated successfully"
-          : "Product created successfully"
-      );
+      setShowModal(false);
+      setEditingId(null);
+      setForm(emptyForm);
 
-      
-
-setShowModal(false);
-setEditingId(null);
-setForm(emptyForm);
-
-await fetchProducts();
+      await fetchProducts();
     } catch (error) {
-      console.error(error);
+      console.error("Save product error:", error);
 
       toast.error(
         error instanceof Error
@@ -247,31 +212,13 @@ await fetchProducts();
     if (!confirmed) return;
 
     try {
-      const token = getToken();
-
-      const response = await fetch(
-        `http://localhost:5000/api/products/${id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          result.message || "Failed to delete product"
-        );
-      }
+      await api.delete(`/products/${id}`);
 
       toast.success("Product deleted");
 
       await fetchProducts();
     } catch (error) {
-      console.error(error);
+      console.error("Delete product error:", error);
 
       toast.error(
         error instanceof Error
@@ -304,7 +251,7 @@ await fetchProducts();
   );
 
   return (
-    <div className="min-h-full text-white">
+    <div>
       {/* Header */}
       <motion.header
         initial={{ opacity: 0, y: -15 }}
@@ -312,33 +259,31 @@ await fetchProducts();
         transition={{ duration: 0.45 }}
         className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between"
       >
-        <div>
-          <div className="mb-2 flex items-center gap-3">
-            <motion.div
-              whileHover={{
-                rotate: 8,
-                scale: 1.05,
-              }}
-              className="flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-400/20 bg-amber-400/10 text-amber-300"
-            >
-              <Package size={21} />
-            </motion.div>
+        <div className="flex items-center gap-4">
+          <motion.div
+            whileHover={{
+              rotate: 8,
+              scale: 1.05,
+            }}
+            className="flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-400/20 bg-amber-400/10 text-amber-300"
+          >
+            <Package size={20} />
+          </motion.div>
 
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-300/70">
-                Inventory Control
-              </p>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-300/70">
+              Inventory Control
+            </p>
 
-              <h1 className="text-3xl font-bold tracking-tight text-white">
-                Products
-              </h1>
-            </div>
+            <h1 className="text-3xl font-bold tracking-tight text-white">
+              Products
+            </h1>
+
+            <p className="mt-1 max-w-xl text-sm text-zinc-500">
+              Manage your product catalogue, pricing,
+              warehouses and stock thresholds.
+            </p>
           </div>
-
-          <p className="max-w-xl text-sm text-zinc-500">
-            Manage your product catalogue, pricing,
-            warehouses and stock thresholds.
-          </p>
         </div>
 
         <motion.button
@@ -577,7 +522,6 @@ await fetchProducts();
                       }}
                       className="group border-b border-white/[0.04] transition-colors hover:bg-white/[0.025]"
                     >
-                      {/* Product */}
                       <td className="px-6 py-5">
                         <div className="flex items-center gap-3">
                           <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-amber-400/10 bg-amber-400/5 text-amber-300">
@@ -596,19 +540,16 @@ await fetchProducts();
                         </div>
                       </td>
 
-                      {/* SKU */}
                       <td className="px-6 py-5 font-mono text-xs text-zinc-500">
                         {product.sku}
                       </td>
 
-                      {/* Category */}
                       <td className="px-6 py-5">
                         <span className="rounded-lg border border-amber-400/10 bg-amber-400/5 px-2.5 py-1 text-xs text-amber-300">
                           {product.category}
                         </span>
                       </td>
 
-                      {/* Price */}
                       <td className="px-6 py-5 font-medium text-zinc-300">
                         ₹
                         {Number(
@@ -616,7 +557,6 @@ await fetchProducts();
                         ).toLocaleString("en-IN")}
                       </td>
 
-                      {/* Stock */}
                       <td className="px-6 py-5">
                         <div className="flex items-center gap-2">
                           <span
@@ -638,12 +578,10 @@ await fetchProducts();
                         </div>
                       </td>
 
-                      {/* Warehouse */}
                       <td className="px-6 py-5 text-sm text-zinc-500">
                         {product.warehouse}
                       </td>
 
-                      {/* Actions */}
                       <td className="px-6 py-5">
                         <div className="flex justify-end gap-1 opacity-70 transition group-hover:opacity-100">
                           <motion.button
@@ -733,7 +671,6 @@ await fetchProducts();
               }}
               className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-white/[0.08] bg-[#111111] shadow-2xl shadow-black/60"
             >
-              {/* Modal header */}
               <div className="flex items-center justify-between border-b border-white/[0.06] p-6">
                 <div>
                   <p className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-amber-300/70">
@@ -752,6 +689,7 @@ await fetchProducts();
                 </div>
 
                 <button
+                  type="button"
                   onClick={closeModal}
                   className="rounded-xl p-2.5 text-zinc-600 transition hover:bg-white/[0.05] hover:text-white"
                 >
@@ -759,7 +697,6 @@ await fetchProducts();
                 </button>
               </div>
 
-              {/* Form */}
               <form
                 onSubmit={handleSubmit}
                 className="space-y-6 p-6"
@@ -769,10 +706,7 @@ await fetchProducts();
                     label="Product Name *"
                     value={form.name}
                     onChange={(value) =>
-                      handleChange(
-                        "name",
-                        value
-                      )
+                      handleChange("name", value)
                     }
                   />
 
@@ -780,10 +714,7 @@ await fetchProducts();
                     label="SKU *"
                     value={form.sku}
                     onChange={(value) =>
-                      handleChange(
-                        "sku",
-                        value
-                      )
+                      handleChange("sku", value)
                     }
                   />
 
@@ -834,7 +765,6 @@ await fetchProducts();
                   />
                 </div>
 
-                {/* Stock information */}
                 <div className="rounded-2xl border border-amber-400/10 bg-amber-400/[0.035] p-4">
                   <div className="flex gap-3">
                     <Package
@@ -855,7 +785,6 @@ await fetchProducts();
                   </div>
                 </div>
 
-                {/* Actions */}
                 <div className="flex justify-end gap-3 border-t border-white/[0.06] pt-5">
                   <button
                     type="button"
@@ -970,7 +899,7 @@ function Input({
 }: InputProps) {
   return (
     <div>
-      <label className="mb-2 block text-xs font-medium text-zinc-500">
+      <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.15em] text-zinc-600">
         {label}
       </label>
 

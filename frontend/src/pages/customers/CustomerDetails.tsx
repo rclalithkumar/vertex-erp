@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import api from "../../services/api";
 import {
   ArrowLeft,
   Building2,
@@ -44,23 +45,12 @@ export default function CustomerDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const [customer, setCustomer] =
-    useState<Customer | null>(null);
-
-  const [followUps, setFollowUps] =
-    useState<FollowUp[]>([]);
-
-  const [loading, setLoading] =
-    useState(true);
-
-  const [saving, setSaving] =
-    useState(false);
-
-  const [note, setNote] =
-    useState("");
-
-  const [followUpDate, setFollowUpDate] =
-    useState("");
+  const [customer, setCustomer] = useState<Customer | null>(null);
+  const [followUps, setFollowUps] = useState<FollowUp[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [note, setNote] = useState("");
+  const [followUpDate, setFollowUpDate] = useState("");
 
   /*
    * ==========================================
@@ -80,52 +70,16 @@ export default function CustomerDetails() {
       try {
         setLoading(true);
 
-        const token =
-          localStorage.getItem("token");
-
-        const headers = {
-          Authorization: `Bearer ${token}`,
-        };
-
-        const [
-          customerResponse,
-          followUpsResponse,
-        ] = await Promise.all([
-          fetch(
-            `http://localhost:5000/api/customers/${id}`,
-            {
-              headers,
-            }
-          ),
-          fetch(
-            `http://localhost:5000/api/customers/${id}/followups`,
-            {
-              headers,
-            }
-          ),
-        ]);
-
-        const customerResult =
-          await customerResponse.json();
-
-        const followUpsResult =
-          await followUpsResponse.json();
-
-        if (!customerResponse.ok) {
-          throw new Error(
-            customerResult.message ||
-              "Failed to fetch customer"
-          );
-        }
-
-        if (!followUpsResponse.ok) {
-          throw new Error(
-            followUpsResult.message ||
-              "Failed to fetch follow-ups"
-          );
-        }
+        const [customerResponse, followUpsResponse] =
+          await Promise.all([
+            api.get(`/customers/${id}`),
+            api.get(`/customers/${id}/followups`),
+          ]);
 
         if (cancelled) return;
+
+        const customerResult = customerResponse.data;
+        const followUpsResult = followUpsResponse.data;
 
         const customerData =
           customerResult.data?.customer ||
@@ -133,9 +87,7 @@ export default function CustomerDetails() {
 
         setCustomer(customerData);
 
-        setFollowUps(
-          followUpsResult.data || []
-        );
+        setFollowUps(followUpsResult.data || []);
 
         if (customerData?.followUpDate) {
           setFollowUpDate(
@@ -180,27 +132,9 @@ export default function CustomerDetails() {
     if (!id) return;
 
     try {
-      const token =
-        localStorage.getItem("token");
+      const response = await api.get(`/customers/${id}`);
 
-      const response = await fetch(
-        `http://localhost:5000/api/customers/${id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      const result =
-        await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          result.message ||
-            "Failed to refresh customer"
-        );
-      }
+      const result = response.data;
 
       const customerData =
         result.data?.customer ||
@@ -212,6 +146,8 @@ export default function CustomerDetails() {
         setFollowUpDate(
           customerData.followUpDate.split("T")[0]
         );
+      } else {
+        setFollowUpDate("");
       }
     } catch (error) {
       console.error(error);
@@ -228,27 +164,11 @@ export default function CustomerDetails() {
     if (!id) return;
 
     try {
-      const token =
-        localStorage.getItem("token");
-
-      const response = await fetch(
-        `http://localhost:5000/api/customers/${id}/followups`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      const response = await api.get(
+        `/customers/${id}/followups`
       );
 
-      const result =
-        await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          result.message ||
-            "Failed to fetch follow-ups"
-        );
-      }
+      const result = response.data;
 
       setFollowUps(result.data || []);
     } catch (error) {
@@ -276,54 +196,27 @@ export default function CustomerDetails() {
     if (!id) return;
 
     if (!note.trim()) {
-      toast.error(
-        "Enter a follow-up note"
-      );
+      toast.error("Enter a follow-up note");
       return;
     }
 
     if (!followUpDate) {
-      toast.error(
-        "Select a follow-up date"
-      );
+      toast.error("Select a follow-up date");
       return;
     }
 
     try {
       setSaving(true);
 
-      const token =
-        localStorage.getItem("token");
-
-      const response = await fetch(
-        `http://localhost:5000/api/customers/${id}/followups`,
+      await api.post(
+        `/customers/${id}/followups`,
         {
-          method: "POST",
-          headers: {
-            "Content-Type":
-              "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            note: note.trim(),
-            followUpAt: followUpDate,
-          }),
+          note: note.trim(),
+          followUpAt: followUpDate,
         }
       );
 
-      const result =
-        await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          result.message ||
-            "Failed to add follow-up"
-        );
-      }
-
-      toast.success(
-        "Follow-up added"
-      );
+      toast.success("Follow-up added");
 
       setNote("");
 
@@ -352,34 +245,12 @@ export default function CustomerDetails() {
     followUp: FollowUp
   ) => {
     try {
-      const token =
-        localStorage.getItem("token");
-
-      const response = await fetch(
-        `http://localhost:5000/api/followups/${followUp.id}`,
+      await api.put(
+        `/followups/${followUp.id}`,
         {
-          method: "PUT",
-          headers: {
-            "Content-Type":
-              "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            completed:
-              !followUp.completed,
-          }),
+          completed: !followUp.completed,
         }
       );
-
-      const result =
-        await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          result.message ||
-            "Failed to update follow-up"
-        );
-      }
 
       toast.success(
         followUp.completed
@@ -408,40 +279,18 @@ export default function CustomerDetails() {
   const deleteFollowUp = async (
     followUpId: string
   ) => {
-    const confirmed =
-      window.confirm(
-        "Delete this follow-up?"
-      );
+    const confirmed = window.confirm(
+      "Delete this follow-up?"
+    );
 
     if (!confirmed) return;
 
     try {
-      const token =
-        localStorage.getItem("token");
-
-      const response = await fetch(
-        `http://localhost:5000/api/followups/${followUpId}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      await api.delete(
+        `/followups/${followUpId}`
       );
 
-      const result =
-        await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          result.message ||
-            "Failed to delete follow-up"
-        );
-      }
-
-      toast.success(
-        "Follow-up deleted"
-      );
+      toast.success("Follow-up deleted");
 
       await refreshFollowUps();
     } catch (error) {
@@ -464,8 +313,8 @@ export default function CustomerDetails() {
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="flex items-center gap-3 text-zinc-600">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-zinc-700 border-t-yellow-400" />
+        <div className="flex items-center gap-3 text-zinc-400">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/10 border-t-yellow-400" />
 
           <span className="text-sm">
             Loading customer...
@@ -505,7 +354,7 @@ export default function CustomerDetails() {
    */
 
   return (
-    <div className="pb-10">
+    <div>
       {/* Header */}
 
       <motion.header
@@ -916,9 +765,12 @@ function InfoItem({
 }) {
   return (
     <div>
-      <div className="mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-zinc-600">
+      <div className="mb-2 flex items-center gap-2 text-zinc-600">
         {icon}
-        {label}
+
+        <p className="text-[10px] font-semibold uppercase tracking-[0.15em]">
+          {label}
+        </p>
       </div>
 
       <p className="text-sm text-zinc-300">

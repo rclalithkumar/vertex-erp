@@ -3,21 +3,17 @@ import { env } from "./config/env.js";
 
 const startServer = async () => {
   try {
-    app.listen(env.PORT, () => {
+    app.listen(env.PORT, "0.0.0.0", () => {
       console.log(`
 🚀 Mini ERP CRM API
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Server: http://localhost:${env.PORT}
-Health: http://localhost:${env.PORT}/api/health
+Server running on port: ${env.PORT}
+Health: /api/health
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
       `);
     });
   } catch (error) {
-    console.error(
-      "Failed to start server:",
-      error
-    );
-
+    console.error("Failed to start server:", error);
     process.exit(1);
   }
 };
