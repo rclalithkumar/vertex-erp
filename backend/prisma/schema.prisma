@@ -1,0 +1,178 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  SALES
+  WAREHOUSE
+  ACCOUNTS
+}
+
+enum CustomerType {
+  RETAIL
+  WHOLESALE
+  DISTRIBUTOR
+}
+
+enum CustomerStatus {
+  LEAD
+  ACTIVE
+  INACTIVE
+}
+
+enum MovementType {
+  IN
+  OUT
+}
+
+enum ChallanStatus {
+  DRAFT
+  CONFIRMED
+  CANCELLED
+}
+
+enum FollowUpStatus {
+  PENDING
+  COMPLETED
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(SALES)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  customers       Customer[]
+  stockMovements  StockMovement[]
+  challans        Challan[]
+  followUps       FollowUp[]
+}
+
+model Customer {
+  id             String         @id @default(cuid())
+  name           String
+  mobile         String
+  email          String?
+  businessName   String
+  gstNumber      String?
+  customerType   CustomerType
+  address        String
+  status         CustomerStatus @default(LEAD)
+  followUpDate   DateTime?
+  notes          String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  createdById    String?
+  createdBy      User?          @relation(fields: [createdById], references: [id])
+
+  challans       Challan[]
+  followUps      FollowUp[]
+
+  @@index([name])
+  @@index([mobile])
+  @@index([status])
+}
+
+
+
+model FollowUp {
+  id         String         @id @default(cuid())
+  note       String
+  followUpAt DateTime       @default(now())
+  createdAt  DateTime       @default(now())
+  status     FollowUpStatus @default(PENDING)
+
+  customerId String
+  customer   Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  createdById String?
+  createdBy   User?         @relation(fields: [createdById], references: [id])
+
+  @@index([customerId])
+}
+
+model Product {
+  id             String   @id @default(cuid())
+  name           String
+  sku            String   @unique
+  category       String
+  unitPrice      Decimal  @db.Decimal(12, 2)
+  currentStock   Int      @default(0)
+  minimumStock   Int      @default(0)
+  warehouse      String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  stockMovements StockMovement[]
+  challanItems   ChallanItem[]
+
+  @@index([name])
+  @@index([category])
+}
+
+model StockMovement {
+  id          String       @id @default(cuid())
+  quantity    Int
+  type        MovementType
+  reason      String
+  createdAt   DateTime     @default(now())
+
+  productId   String
+  product     Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  createdById String?
+  createdBy   User?        @relation(fields: [createdById], references: [id])
+
+  @@index([productId])
+  @@index([createdAt])
+}
+
+model Challan {
+  id            String        @id @default(cuid())
+  challanNumber String        @unique
+  totalQuantity Int           @default(0)
+  status        ChallanStatus  @default(DRAFT)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  customerId    String
+  customer      Customer      @relation(fields: [customerId], references: [id])
+
+  createdById   String?
+  createdBy     User?         @relation(fields: [createdById], references: [id])
+
+  items         ChallanItem[]
+
+  @@index([customerId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model ChallanItem {
+  id            String   @id @default(cuid())
+  quantity      Int
+
+  // Snapshot data - preserves what was on the challan
+  productName   String
+  sku           String
+  unitPrice     Decimal  @db.Decimal(12, 2)
+
+  challanId     String
+  challan       Challan  @relation(fields: [challanId], references: [id], onDelete: Cascade)
+
+  productId     String
+  product       Product  @relation(fields: [productId], references: [id])
+
+  @@index([challanId])
+  @@index([productId])
+}

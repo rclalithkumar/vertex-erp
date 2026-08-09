@@ -1,0 +1,63 @@
+.app-shell {
+  min-height: 100vh;
+  background: #09090b;
+  color: #f4f4f5;
+}
+
+.page-content {
+  min-height: calc(100vh - 80px);
+}
+
+.premium-card {
+  border: 1px solid #27272a;
+  background: #111113;
+  border-radius: 16px;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.premium-card:hover {
+  transform: translateY(-2px);
+  border-color: #3f3f46;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.25);
+}
+
+.violet-button {
+  background: #8b5cf6;
+  color: white;
+  transition:
+    transform 150ms ease,
+    background 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.violet-button:hover {
+  background: #7c3aed;
+  box-shadow: 0 8px 25px rgba(139, 92, 246, 0.2);
+  transform: translateY(-1px);
+}
+
+.violet-button:active {
+  transform: scale(0.98);
+}
+
+.subtle-input {
+  border: 1px solid #27272a;
+  background: #0f0f11;
+  color: #f4f4f5;
+  outline: none;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.subtle-input:focus {
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.subtle-input::placeholder {
+  color: #71717a;
+}
