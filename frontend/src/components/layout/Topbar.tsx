@@ -123,7 +123,7 @@ export default function Topbar() {
 
   const current =
     pageInfo[location.pathname] ?? {
-      title: "Mini ERP",
+      title: "VertexERP",
       description: "Business management system",
     };
 

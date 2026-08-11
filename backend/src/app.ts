@@ -23,7 +23,7 @@ app.use(express.json());
 app.get("/api/health", (_req, res) => {
   res.json({
     success: true,
-    message: "Mini ERP CRM API is running",
+    message: "VertexERP CRM API is running",
     timestamp: new Date().toISOString(),
   });
 });

@@ -72,7 +72,7 @@ export default function Login() {
 
                 <div>
                   <p className="text-sm font-semibold tracking-tight text-white">
-                    Mini ERP
+                    VertexERP 
                   </p>
 
                   <p className="text-[10px] uppercase tracking-[0.18em] text-zinc-600">
@@ -132,7 +132,7 @@ export default function Login() {
             {/* Footer */}
             <div className="flex items-center justify-between border-t border-white/[0.06] pt-5">
               <p className="text-[11px] text-zinc-700">
-                MINI ERP CRM
+                VertexERP  CRM
               </p>
 
               <p className="text-[11px] text-zinc-700">
@@ -162,7 +162,7 @@ export default function Login() {
 
               <div>
                 <p className="text-sm font-semibold text-white">
-                  Mini ERP
+                  VertexERP 
                 </p>
 
                 <p className="text-[10px] uppercase tracking-[0.18em] text-zinc-600">
@@ -340,7 +340,7 @@ export default function Login() {
 
             {/* Mobile footer */}
             <p className="mt-12 text-center text-[10px] uppercase tracking-[0.15em] text-zinc-700 lg:hidden">
-              Mini ERP CRM
+              VertexERP  CRM
             </p>
 
           </div>

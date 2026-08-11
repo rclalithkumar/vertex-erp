@@ -158,7 +158,7 @@ export default function Sidebar() {
           {/* Brand */}
           <div>
             <h1 className="text-lg font-semibold tracking-tight text-white">
-              Mini ERP
+              VertexERP 
             </h1>
 
             <p className="mt-0.5 text-[9px] font-medium uppercase tracking-[0.24em] text-neutral-500">
