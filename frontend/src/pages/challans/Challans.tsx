@@ -258,7 +258,7 @@ export default function Challans() {
      * --------------------------------------------------
      */
 
-    const companyName = "NexaCore Solutions";
+    const companyName = "VertexERP Solutions";
     const companyTagline =
       "Business & Technology Solutions";
 
@@ -269,7 +269,7 @@ export default function Challans() {
       "+91 98765 43210";
 
     const companyEmail =
-      "contact@nexacore.in";
+      "contact@vertexerp.in";
 
     /*
      * --------------------------------------------------
@@ -1006,7 +1006,7 @@ export default function Challans() {
     pdf.setFontSize(7.5);
 
     pdf.text(
-      "This invoice is generated from the NexaCore Solutions",
+      "This invoice is generated from the VertexERP Solutions",
       margin,
       y
     );
