@@ -119,14 +119,14 @@ export default function Sidebar() {
     displayName.charAt(0).toUpperCase() || "A";
 
   return (
-    <aside className="fixed left-0 top-0 z-50 flex h-screen w-72 flex-col border-r border-white/[0.06] bg-[#090909]">
+    <aside className="fixed left-0 top-0 z-50 flex h-screen w-72 flex-col border-r border-white/6 bg-[#090909]">
       {/* =========================
           BRAND
       ========================== */}
       <button
         type="button"
         onClick={() => navigate("/dashboard")}
-        className="w-full border-b border-white/[0.06] text-left"
+        className="w-full border-b border-white/6 text-left"
       >
         <motion.div
           initial={{
@@ -147,7 +147,7 @@ export default function Sidebar() {
           className="flex h-20 items-center gap-3 px-6"
         >
           {/* Logo */}
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-amber-400/20 bg-amber-400/[0.08]">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-amber-400/20 bg-amber-400/8">
             <Sparkles
               size={20}
               strokeWidth={1.8}
@@ -235,7 +235,7 @@ export default function Sidebar() {
                             {isActive && (
                               <motion.div
                                 layoutId="active-sidebar"
-                                className="absolute left-0 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-r-full bg-amber-400"
+                                className="absolute left-0 top-1/2 h-6 w-0.75 -translate-y-1/2 rounded-r-full bg-amber-400"
                                 transition={{
                                   type: "spring",
                                   stiffness: 400,
@@ -253,7 +253,7 @@ export default function Sidebar() {
                                 ${
                                   isActive
                                     ? "bg-amber-400/10 text-amber-400"
-                                    : "bg-white/[0.035] text-neutral-600 group-hover:bg-white/[0.06] group-hover:text-neutral-300"
+                                    : "bg-white/[0.035] text-neutral-600 group-hover:bg-white/6 group-hover:text-neutral-300"
                                 }
                               `}
                             >
@@ -305,9 +305,9 @@ export default function Sidebar() {
       {/* =========================
           USER / LOGOUT
       ========================== */}
-      <div className="border-t border-white/[0.06] p-4">
+      <div className="border-t border-white/6 p-4">
         {/* User */}
-        <div className="mb-3 flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
+        <div className="mb-3 flex items-center gap-3 rounded-xl border border-white/6 bg-white/2.5 p-3">
           {/* Avatar */}
           <div className="relative">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-400 text-sm font-bold text-black">
@@ -340,7 +340,7 @@ export default function Sidebar() {
             scale: 0.98,
           }}
           onClick={handleLogout}
-          className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-neutral-500 transition hover:bg-red-500/[0.05] hover:text-red-400"
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-neutral-500 transition hover:bg-red-500/5 hover:text-red-400"
         >
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/[0.035]">
             <LogOut

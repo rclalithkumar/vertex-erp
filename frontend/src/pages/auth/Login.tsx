@@ -60,7 +60,7 @@ export default function Login() {
             LEFT BRAND PANEL
         ===================================================== */}
 
-        <section className="relative hidden overflow-hidden border-r border-white/[0.06] lg:flex">
+        <section className="relative hidden overflow-hidden border-r border-white/6 lg:flex">
           <div className="flex w-full flex-col justify-between p-12 xl:p-16">
 
             {/* Brand */}
@@ -130,7 +130,7 @@ export default function Login() {
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-between border-t border-white/[0.06] pt-5">
+            <div className="flex items-center justify-between border-t border-white/6 pt-5">
               <p className="text-[11px] text-zinc-700">
                 VertexERP  CRM
               </p>
@@ -143,7 +143,7 @@ export default function Login() {
           </div>
 
           {/* Very subtle accent line */}
-          <div className="absolute bottom-0 left-0 top-0 w-[2px] bg-amber-400/70" />
+          <div className="absolute bottom-0 left-0 top-0 w-0.5 bg-amber-400/70" />
         </section>
 
         {/* =====================================================
@@ -152,7 +152,7 @@ export default function Login() {
 
         <section className="flex min-h-screen items-center justify-center px-6 py-10 sm:px-10">
 
-          <div className="w-full max-w-[420px]">
+          <div className="w-full max-w-105">
 
             {/* Mobile branding */}
             <div className="mb-12 flex items-center gap-3 lg:hidden">
@@ -221,7 +221,7 @@ export default function Login() {
                     placeholder="admin@erp.com"
                     autoComplete="email"
                     required
-                    className="h-12 w-full rounded-lg border border-white/[0.09] bg-[#111111] pl-11 pr-4 text-sm text-white outline-none transition placeholder:text-zinc-700 hover:border-white/[0.14] focus:border-amber-400/60 focus:bg-[#131313] focus:ring-1 focus:ring-amber-400/10"
+                    className="h-12 w-full rounded-lg border border-white/9 bg-[#111111] pl-11 pr-4 text-sm text-white outline-none transition placeholder:text-zinc-700 hover:border-white/[0.14] focus:border-amber-400/60 focus:bg-[#131313] focus:ring-1 focus:ring-amber-400/10"
                   />
 
                 </div>
@@ -261,7 +261,7 @@ export default function Login() {
                     placeholder="Enter your password"
                     autoComplete="current-password"
                     required
-                    className="h-12 w-full rounded-lg border border-white/[0.09] bg-[#111111] pl-11 pr-12 text-sm text-white outline-none transition placeholder:text-zinc-700 hover:border-white/[0.14] focus:border-amber-400/60 focus:bg-[#131313] focus:ring-1 focus:ring-amber-400/10"
+                    className="h-12 w-full rounded-lg border border-white/9 bg-[#111111] pl-11 pr-12 text-sm text-white outline-none transition placeholder:text-zinc-700 hover:border-white/[0.14] focus:border-amber-400/60 focus:bg-[#131313] focus:ring-1 focus:ring-amber-400/10"
                   />
 
                   <button
@@ -314,7 +314,7 @@ export default function Login() {
             </form>
 
             {/* Demo credentials */}
-            <div className="mt-8 border-t border-white/[0.06] pt-6">
+            <div className="mt-8 border-t border-white/6 pt-6">
 
               <div className="flex items-start gap-3">
 
@@ -365,7 +365,7 @@ function Feature({
   description,
 }: FeatureProps) {
   return (
-    <div className="border-l border-white/[0.08] pl-4">
+    <div className="border-l border-white/8 pl-4">
       <p className="text-xs font-medium text-zinc-300">
         {title}
       </p>

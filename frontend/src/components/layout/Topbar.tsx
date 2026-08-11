@@ -630,7 +630,7 @@ export default function Topbar() {
                 (value) => !value
               )
             }
-            className="hidden items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.025] px-3 py-2 text-left transition hover:border-white/[0.12] hover:bg-white/[0.045] md:flex md:w-56"
+            className="hidden items-center gap-3 rounded-xl border border-white/[0.07] bg-white/2.5 px-3 py-2 text-left transition hover:border-white/12 hover:bg-white/4.5 md:flex md:w-56"
           >
             <Search
               size={16}
@@ -641,7 +641,7 @@ export default function Topbar() {
               Search...
             </span>
 
-            <span className="flex items-center gap-1 rounded-md border border-white/[0.08] px-1.5 py-0.5 text-[10px] text-zinc-600">
+            <span className="flex items-center gap-1 rounded-md border border-white/8 px-1.5 py-0.5 text-[10px] text-zinc-600">
               <Command size={9} />
               K
             </span>
@@ -665,9 +665,9 @@ export default function Topbar() {
                   y: -5,
                   scale: 0.98,
                 }}
-                className="absolute right-0 top-14 z-50 w-[min(20rem,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] rounded-2xl border border-white/[0.08] bg-[#111111] p-3 shadow-2xl"
+                className="absolute right-0 top-14 z-50 w-[min(20rem,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] rounded-2xl border border-white/8 bg-[#111111] p-3 shadow-2xl"
               >
-                <div className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3">
+                <div className="flex items-center gap-2 rounded-xl border border-white/8 bg-white/3 px-3">
                   <Search
                     size={16}
                     className="shrink-0 text-zinc-500"
@@ -728,7 +728,7 @@ export default function Topbar() {
     onClick={() =>
       setNotificationOpen((value) => !value)
     }
-    className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.025] text-zinc-400 transition hover:border-white/[0.12] hover:bg-white/[0.05] hover:text-white"
+    className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.07] bg-white/2.5 text-zinc-400 transition hover:border-white/12 hover:bg-white/5 hover:text-white"
   >
     <Bell size={17} />
 
@@ -765,20 +765,20 @@ export default function Topbar() {
         className="
           fixed
           right-4
-          top-[72px]
-          z-[9999]
+          top-18
+          z-9999
           w-[min(384px,calc(100vw-2rem))]
           max-w-[calc(100vw-2rem)]
           overflow-hidden
           rounded-2xl
           border
-          border-white/[0.08]
+          border-white/8
           bg-[#111111]
           shadow-2xl
         "
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
+        <div className="flex items-center justify-between border-b border-white/6 px-5 py-4">
           <div className="min-w-0">
             <h3 className="text-sm font-semibold text-white">
               Notifications
@@ -842,7 +842,7 @@ export default function Topbar() {
                       notification
                     )
                   }
-                  className="flex w-full gap-3 border-b border-white/[0.05] px-5 py-4 text-left transition hover:bg-white/[0.035]"
+                  className="flex w-full gap-3 border-b border-white/5 px-5 py-4 text-left transition hover:bg-white/3.5"
                 >
                   {/* Icon */}
                   <div
@@ -869,7 +869,7 @@ export default function Topbar() {
                       )}
                     </div>
 
-                    <p className="mt-1 break-words text-[11px] leading-5 text-zinc-500">
+                    <p className="mt-1 wrap-break-word text-[11px] leading-5 text-zinc-500">
                       {notification.description}
                     </p>
                   </div>
@@ -903,9 +903,9 @@ export default function Topbar() {
                 (value) => !value
               )
             }
-            className="flex items-center gap-2 rounded-xl px-2 py-1.5 transition hover:bg-white/[0.04]"
+            className="flex items-center gap-2 rounded-xl px-2 py-1.5 transition hover:bg-white/4"
           >
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-rose-500 text-xs font-bold text-white shadow-lg shadow-orange-500/10">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-orange-400 to-rose-500 text-xs font-bold text-white shadow-lg shadow-orange-500/10">
               {user?.name
                 ?.charAt(0)
                 .toUpperCase() ?? "A"}
@@ -939,13 +939,13 @@ export default function Topbar() {
                   y: -5,
                   scale: 0.98,
                 }}
-                className="absolute right-0 top-14 z-50 w-[min(16rem,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-white/[0.08] bg-[#111111] shadow-2xl"
+                className="absolute right-0 top-14 z-50 w-[min(16rem,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-white/8 bg-[#111111] shadow-2xl"
               >
                 {/* User info */}
 
-                <div className="border-b border-white/[0.06] p-4">
+                <div className="border-b border-white/6 p-4">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-rose-500 text-sm font-bold text-white">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-orange-400 to-rose-500 text-sm font-bold text-white">
                       {user?.name
                         ?.charAt(0)
                         .toUpperCase() ??
@@ -986,7 +986,7 @@ export default function Topbar() {
                         "/dashboard"
                       );
                     }}
-                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs text-zinc-400 transition hover:bg-white/[0.04] hover:text-white"
+                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs text-zinc-400 transition hover:bg-white/4 hover:text-white"
                   >
                     <User size={16} />
 
@@ -1001,7 +1001,7 @@ export default function Topbar() {
                     onClick={
                       handleLogout
                     }
-                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs text-zinc-400 transition hover:bg-red-500/[0.06] hover:text-red-400"
+                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs text-zinc-400 transition hover:bg-red-500/6 hover:text-red-400"
                   >
                     <LogOut
                       size={16}
