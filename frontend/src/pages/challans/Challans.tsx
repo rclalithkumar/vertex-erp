@@ -1593,7 +1593,7 @@ export default function Challans() {
                     disabled={
                       items.length === 1
                     }
-                    className="flex h-[50px] items-center justify-center rounded-xl border border-white/10 bg-white/[0.025] text-neutral-600 transition hover:border-red-400/20 hover:bg-red-400/5 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-30"
+                    className="flex h-12.5 items-center justify-center rounded-xl border border-white/10 bg-white/2.5 text-neutral-600 transition hover:border-red-400/20 hover:bg-red-400/5 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-30"
                   >
                     <X size={17} />
                   </button>
@@ -1606,7 +1606,7 @@ export default function Challans() {
           <button
             type="button"
             onClick={addItem}
-            className="mt-4 flex items-center gap-2 rounded-xl border border-dashed border-white/10 px-4 py-3 text-sm text-neutral-500 transition hover:border-amber-300/30 hover:bg-amber-300/[0.025] hover:text-amber-200"
+            className="mt-4 flex items-center gap-2 rounded-xl border border-dashed border-white/10 px-4 py-3 text-sm text-neutral-500 transition hover:border-amber-300/30 hover:bg-amber-300/2.5 hover:text-amber-200"
           >
             <Plus size={16} />
             Add another product
@@ -1701,7 +1701,7 @@ export default function Challans() {
             </div>
           ) : challans.length === 0 ? (
             <div className="px-6 py-16 text-center">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.025]">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/2.5">
                 <ClipboardList
                   size={22}
                   className="text-neutral-600"
@@ -1718,9 +1718,9 @@ export default function Challans() {
               </p>
             </div>
           ) : (
-            <table className="w-full min-w-[850px]">
+            <table className="w-full min-w-212.5">
               <thead>
-                <tr className="border-b border-white/[0.06] bg-white/[0.015]">
+                <tr className="border-b border-white/6 bg-white/1.5">
                   <th className="px-6 py-4 text-left text-[10px] font-semibold uppercase tracking-[0.15em] text-neutral-600">
                     Challan
                   </th>
@@ -1757,7 +1757,7 @@ export default function Challans() {
                       transition={{
                         delay: index * 0.035,
                       }}
-                      className="border-b border-white/[0.045] transition hover:bg-white/[0.02]"
+                      className="border-b border-white/4.5 transition hover:bg-white/2"
                     >
                       <td className="px-6 py-5">
                         <div className="flex items-center gap-3">
@@ -1905,7 +1905,7 @@ function SummaryCard({
       className={`rounded-2xl border px-4 py-4 ${
         accent
           ? "border-amber-300/10 bg-amber-300/[0.035]"
-          : "border-white/[0.07] bg-white/[0.02]"
+          : "border-white/[0.07] bg-white/2"
       }`}
     >
       <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-neutral-600">
