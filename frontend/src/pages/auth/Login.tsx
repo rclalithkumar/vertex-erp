@@ -130,7 +130,7 @@ export default function Login() {
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-between border-t border-white/6 pt-5">
+            <div className="flex items-center justify-between pt-5">
               <p className="text-[11px] text-zinc-700">
                 VertexERP  CRM
               </p>
@@ -313,30 +313,7 @@ export default function Login() {
 
             </form>
 
-            {/* Demo credentials */}
-            <div className="mt-8 border-t border-white/6 pt-6">
-
-              <div className="flex items-start gap-3">
-
-                <div className="mt-0.5 h-1.5 w-1.5 rounded-full bg-amber-400" />
-
-                <div>
-                  <p className="text-xs font-medium text-zinc-400">
-                    Demo account
-                  </p>
-
-                  <p className="mt-1 text-xs text-zinc-600">
-                    admin@erp.com
-                    <span className="mx-2 text-zinc-800">
-                      •
-                    </span>
-                    Admin@123
-                  </p>
-                </div>
-
-              </div>
-
-            </div>
+            
 
             {/* Mobile footer */}
             <p className="mt-12 text-center text-[10px] uppercase tracking-[0.15em] text-zinc-700 lg:hidden">
